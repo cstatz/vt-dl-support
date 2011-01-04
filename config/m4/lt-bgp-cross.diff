@@ -1,0 +1,38 @@
+--- config/m4/libtool.m4.orig
++++ config/m4/libtool.m4
+@@ -3726,7 +3726,7 @@
+ 	    _LT_TAGVAR(lt_prog_compiler_pic, $1)=
+ 	    _LT_TAGVAR(lt_prog_compiler_static, $1)='-non_shared'
+ 	    ;;
+-	  xlc* | xlC*)
++	  bgxlc* | bgxlC* | xlc* | xlC*)
+ 	    # IBM XL 8.0 on PPC
+ 	    _LT_TAGVAR(lt_prog_compiler_wl, $1)='-Wl,'
+ 	    _LT_TAGVAR(lt_prog_compiler_pic, $1)='-qpic'
+@@ -4010,7 +4010,7 @@
+         # All Alpha code is PIC.
+         _LT_TAGVAR(lt_prog_compiler_static, $1)='-non_shared'
+         ;;
+-      xl*)
++      bgxl* | xl*)
+ 	# IBM XL C 8.0/Fortran 10.1 on PPC
+ 	_LT_TAGVAR(lt_prog_compiler_wl, $1)='-Wl,'
+ 	_LT_TAGVAR(lt_prog_compiler_pic, $1)='-qpic'
+@@ -4387,7 +4387,7 @@
+ 	lf95*)				# Lahey Fortran 8.1
+ 	  _LT_TAGVAR(whole_archive_flag_spec, $1)=
+ 	  tmp_sharedflag='--shared' ;;
+-	xl[[cC]]*)			# IBM XL C 8.0 on PPC (deal with xlf below)
++	bgxl[[cC]]* | xl[[cC]]*)			# IBM XL C 8.0 on PPC (deal with xlf below)
+ 	  tmp_sharedflag='-qmkshrobj'
+ 	  tmp_addflag= ;;
+ 	esac
+@@ -5944,7 +5944,7 @@
+ 	    # dependencies.
+ 	    output_verbose_link_cmd='templist=`$CC -shared $CFLAGS -v conftest.$objext 2>&1 | $GREP "ld"`; templist=`$ECHO "X$templist" | $Xsed -e "s/\(^.*ld.*\)\( .*ld .*$\)/\1/"`; list=""; for z in $templist; do case $z in conftest.$objext) list="$list $z";; *.$objext);; *) list="$list $z";;esac; done; $ECHO "X$list" | $Xsed'
+ 	    ;;
+-	  xl*)
++	  bgxl* | xl*)
+ 	    # IBM XL 8.0 on PPC, with GNU ld
+ 	    _LT_TAGVAR(hardcode_libdir_flag_spec, $1)='${wl}-rpath ${wl}$libdir'
+ 	    _LT_TAGVAR(export_dynamic_flag_spec, $1)='${wl}--export-dynamic'

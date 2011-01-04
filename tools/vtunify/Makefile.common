@@ -1,0 +1,94 @@
+#RAWHOOKSSOURCES = \
+#	$(VTUNIFYSRCDIR)/hooks/vt_unify_hooks_raw.h \
+#	$(VTUNIFYSRCDIR)/hooks/vt_unify_hooks_raw.cc
+#RAWHOOKSCXXFLAGS = -DVT_UNIFY_HOOKS_RAW
+
+STATSHOOKSSOURCES = \
+	$(VTUNIFYSRCDIR)/hooks/vt_unify_hooks_stats.h \
+	$(VTUNIFYSRCDIR)/hooks/vt_unify_hooks_stats.cc
+STATSHOOKSCXXFLAGS = -DVT_UNIFY_HOOKS_STATS
+
+TDBHOOKSSOURCES = \
+       $(VTUNIFYSRCDIR)/hooks/vt_unify_hooks_tdb.h \
+       $(VTUNIFYSRCDIR)/hooks/vt_unify_hooks_tdb.cc
+TDBHOOKSCXXFLAGS = -DVT_UNIFY_HOOKS_TDB
+
+HOOKSSOURCES = \
+	$(VTUNIFYSRCDIR)/hooks/vt_unify_hooks_base.h \
+	$(VTUNIFYSRCDIR)/hooks/vt_unify_hooks_base.cc \
+	$(RAWHOOKSSOURCES) \
+	$(STATSHOOKSSOURCES) \
+	$(TDBHOOKSSOURCES)
+
+HOOKSCXXFLAGS = \
+	$(RAWHOOKSCXXFLAGS) \
+	$(STATSHOOKSCXXFLAGS) \
+	$(TDBHOOKSCXXFLAGS)
+
+if AMBUILDETIMESYNC
+ETIMESYNCSOURCES = $(VTUNIFYSRCDIR)/vt_unify_sync.cc
+ETIMESYNCCXXFLAGS = -DVT_ETIMESYNC
+ETIMESYNCINCLUDE = $(CLAPACKINCDIR)
+ETIMESYNCLIBRARY = $(CLAPACKLIBDIR) $(CLAPACKLIB)
+else
+ETIMESYNCSOURCES =
+ETIMESYNCCXXFLAGS =
+ETIMESYNCINCLUDE =
+ETIMESYNCLIBRARY =
+endif
+
+if AMEXTERNOTF
+OTFINCLUDE = $(OTFINCDIR)
+OTFLIBRARY = $(OTFLIBDIR) $(OTFLIB)
+OTFDEPENDENCIES =
+else
+OTFINCLUDE = -I$(top_srcdir)/extlib/otf/otflib -I$(top_builddir)/extlib/otf/otflib
+OTFLIBRARY = $(top_builddir)/extlib/otf/otflib/libotf.la
+OTFDEPENDENCIES = $(OTFLIBRARY)
+endif
+
+INCLUDES = -I$(VTUNIFYSRCDIR) $(OTFINCLUDE) $(ETIMESYNCINCLUDE) -I$(top_srcdir)/include -I$(top_builddir)/include -I$(top_srcdir)/vtlib
+
+COMMONSOURCES = \
+	$(VTUNIFYSRCDIR)/vt_unify.h \
+	$(VTUNIFYSRCDIR)/vt_unify_defs.h \
+	$(VTUNIFYSRCDIR)/vt_unify_defs_hdlr.h \
+	$(VTUNIFYSRCDIR)/vt_unify_events.h \
+	$(VTUNIFYSRCDIR)/vt_unify_events_hdlr.h \
+	$(VTUNIFYSRCDIR)/vt_unify_hooks.h \
+	$(VTUNIFYSRCDIR)/vt_unify_markers.h \
+	$(VTUNIFYSRCDIR)/vt_unify_markers_hdlr.h \
+	$(VTUNIFYSRCDIR)/vt_unify_stats.h \
+	$(VTUNIFYSRCDIR)/vt_unify_stats_hdlr.h \
+	$(VTUNIFYSRCDIR)/vt_unify_sync.h \
+	$(VTUNIFYSRCDIR)/vt_unify_tkfac.h \
+	$(VTUNIFYSRCDIR)/vt_unify.cc \
+	$(VTUNIFYSRCDIR)/vt_unify_defs.cc \
+	$(VTUNIFYSRCDIR)/vt_unify_defs_hdlr.cc \
+	$(VTUNIFYSRCDIR)/vt_unify_events.cc \
+	$(VTUNIFYSRCDIR)/vt_unify_events_hdlr.cc \
+	$(VTUNIFYSRCDIR)/vt_unify_hooks.cc \
+	$(VTUNIFYSRCDIR)/vt_unify_markers.cc \
+	$(VTUNIFYSRCDIR)/vt_unify_markers_hdlr.cc \
+	$(VTUNIFYSRCDIR)/vt_unify_stats.cc \
+	$(VTUNIFYSRCDIR)/vt_unify_stats_hdlr.cc \
+	$(ETIMESYNCSOURCES) \
+	$(VTUNIFYSRCDIR)/vt_unify_tkfac.cc \
+	$(HOOKSSOURCES)
+
+if AMHAVEOMP
+COMMONCXXFLAGS = $(OPENMP_CFLAGS) $(HOOKSCXXFLAGS) $(ETIMESYNCCXXFLAGS)
+COMMONLDFLAGS = $(OPENMP_CFLAGS)
+else
+COMMONCXXFLAGS = $(HOOKSCXXFLAGS) $(ETIMESYNCCXXFLAGS)
+COMMONLDFLAGS =
+endif
+
+COMMONLDADD = \
+	$(top_builddir)/util/libutil.la \
+	$(OTFLIBRARY) $(ETIMESYNCLIBRARY)
+
+COMMONDEPENDENCIES = \
+	$(top_builddir)/util/libutil.la \
+	$(OTFDEPENDENCIES)
+

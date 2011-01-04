@@ -1,0 +1,199 @@
+#!/bin/sh
+
+vt_this_version="5.11b`date +%y%m%d`"
+otf_given_pkg=""
+otf_force_update="no"
+otf_ignore="no"
+otf_latest_version="1.8sturgeon"
+otf_pkg_url="http://tu-dresden.de/die_tu_dresden/zentrale_einrichtungen/zih/forschung/software_werkzeuge_zur_unterstuetzung_von_programmierung_und_optimierung/otf/dateien/OTF-$otf_latest_version.tar.gz"
+libtoolize_cmd="$LIBTOOLIZE"
+
+################################################################################
+#
+# show_usage - shows the usage of this script
+#
+################################################################################
+show_usage() {
+	cat <<EOF
+usage: $0 [options]
+
+options:
+   -v | --version <version>       version string of VampirTrace (e.g. 1.2.3alpha)
+   -f | --force-update-otf        force update of internal OTF sources
+   -i | --ignore-otf              ignore missing internal OTF sources
+   -o | --otf-package <package>   path of OTF package (OTF-*.tar.gz)
+   -h | --help                    display this help and exit
+EOF
+}
+
+################################################################################
+#
+# run_and_check - run a command, printing error on failure
+#
+# input: command
+#
+################################################################################
+run_and_check() {
+	local cmd="$*"
+
+	echo "[Running] $cmd"
+	eval $cmd
+	if [ "$?" != 0 ] ; then
+		echo "$0: error: execution of \"$cmd\" failed"
+		exit 1
+	fi
+}
+
+################################################################################
+#
+# update_otf - update OTF sources in extlib/otf, if necessary/desired
+#              - by given OTF package
+#              or
+#              - from the OTF website via 'wget'
+#
+################################################################################
+update_otf() {
+	local do_update="$otf_force_update"
+	local otf_pkg=""
+
+	echo "*** Checking for internal OTF sources in 'extlib/otf'"
+	if [ "$do_update" = "no" -a "$otf_ignore" = "no" ] ; then
+		if [ ! -f extlib/otf/configure ] ; then
+			do_update="yes"
+			echo "--> no 'configure' found - update required"
+		else
+			echo "--> ok - no update required"
+		fi
+	elif [ "$do_update" = "no" -a "$otf_ignore" = "yes" ] ; then
+		echo "--> ignored"
+	else
+		echo "--> update forced"
+	fi
+
+	if [ "$do_update" = "yes" ] ; then
+		if [ "$otf_given_pkg" = "" ] ; then
+			echo "*** Updating OTF sources from web"
+			run_and_check "wget -t 1 -T 10 \"$otf_pkg_url\""
+			otf_pkg="OTF-$otf_latest_version.tar.gz"
+		else
+			echo "*** Updating OTF sources by given package ($otf_given_pkg)"
+			otf_pkg="$otf_given_pkg"
+		fi
+
+		run_and_check "gunzip -c \"$otf_pkg\" | tar xf -"
+		run_and_check "cp -R OTF-*/* extlib/otf/"
+		run_and_check "rm -rf OTF-*"
+        fi
+}
+
+################################################################################
+#
+# main - do the real work...
+#
+################################################################################ 
+
+# check command line parameters
+#
+echo "*** Checking command line parameters"
+while( [ $# -gt 0 ] ); do
+	case "$1" in
+		-f | --force-update-otf)
+			otf_force_update="yes"
+			otf_ignore="no"
+			;;
+		-i | --ignore-otf)
+			otf_ignore="yes"
+			otf_force_update="no"
+			;;
+		-o | --otf-package)
+			if [ "$2" = "" ] ; then
+				echo "$0: <package> expected - $1"
+				exit 1
+			fi
+			otf_given_pkg=$2;
+			otf_force_update="yes"
+			otf_ignore="no"
+			shift
+			;;
+		-v | --version)
+			if [ "$2" = "" ] ; then
+				echo "$0: <version> expected - $1"
+				exit 1
+			fi
+			vt_this_version=$2; shift
+			;;
+		-h | --help)
+			show_usage
+			exit 0
+			;;
+		*)
+			echo "$0: unknown option - $1"
+			show_usage
+			exit 1
+			;;
+	esac
+	shift
+done
+
+# check for libtoolize command, if necessary
+#
+echo "*** Checking for libtoolize"
+if [ -z "$libtoolize_cmd" ] ; then
+	which libtoolize >/dev/null 2>&1
+	if [ "$?" = 0 ] ; then
+		libtoolize_cmd="libtoolize"
+	else
+		which glibtoolize >/dev/null 2>&1
+		if [ "$?" = 0 ] ; then
+			libtoolize_cmd="glibtoolize"
+		else
+			echo "$0: error: neither \"libtoolize\" nor \"glibtoolize\" found"
+			exit 1
+		fi
+	fi
+fi
+echo "--> $libtoolize_cmd"
+
+# update OTF
+update_otf
+
+# create VERSION file
+#
+rm -f VERSION
+echo "*** Setting version for this working copy to '$vt_this_version'"
+echo $vt_this_version >VERSION
+if [ ! -f VERSION ] ; then
+	echo "$0: error: cannot create VERSION file"
+	exit 1
+fi
+
+# run GNU tools
+#
+echo "*** Running GNU tools"
+run_and_check $libtoolize_cmd --automake --copy
+echo "+++ Adjusting libtool"
+echo "--- Patching for PGI C++ compilers"
+patch -N -p0 < config/m4/lt-pgi-cxx.diff >/dev/null 2>&1
+rm -f config/m4/libtool.m4.orig
+rm -f config/m4/libtool.m4.rej
+echo "--- Patching for BlueGene/P cross compilers"
+patch -N -p0 < config/m4/lt-bgp-cross.diff >/dev/null 2>&1
+rm -f config/m4/libtool.m4.orig
+rm -f config/m4/libtool.m4.rej
+echo "--- Patching for NEC SX cross assembler"
+patch -N -p0 < config/ltmain-sxas.diff >/dev/null 2>&1
+rm -f config/ltmain.sh.orig
+rm -f config/ltmain.sh.rej
+
+run_and_check aclocal -I config/m4
+run_and_check autoheader
+run_and_check autoconf
+run_and_check automake --add-missing --copy --include-deps
+
+echo "*** Adjusting configure"
+echo "+++ Patching for PGI 10 Fortran compiler (pgfortran)"
+sed -e 's/gfortran g95 xlf95 f95 fort ifort ifc efc pgf95 lf95 ftn/gfortran g95 xlf95 f95 fort ifort ifc efc pgfortran pgf95 lf95 ftn/' configure > configure.patched 
+cp configure.patched configure
+rm -f configure.patched
+
+exit 0

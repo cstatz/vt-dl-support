@@ -1,0 +1,11 @@
+--- config/m4/libtool.m4.orig
++++ config/m4/libtool.m4
+@@ -5896,7 +5896,7 @@
+           pgCC* | pgcpp*)
+             # Portland Group C++ compiler
+ 	    case `$CC -V` in
+-	    *pgCC\ [[1-5]]* | *pgcpp\ [[1-5]]*)
++	    *pgCC\ [[1-5]].* | *pgcpp\ [[1-5]].*)
+ 	      _LT_TAGVAR(prelink_cmds, $1)='tpldir=Template.dir~
+ 		rm -rf $tpldir~
+ 		$CC --prelink_objects --instantiation_dir $tpldir $objs $libobjs $compile_deplibs~
